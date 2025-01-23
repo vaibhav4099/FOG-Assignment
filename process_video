@@ -1,0 +1,55 @@
+from moviepy.editor import VideoFileClip, AudioFileClip, TextClip, concatenate_videoclips
+
+def process_video(input_video_path, output_video_path, timestamps, music_path):
+    """
+    Process the input video to create a 30-second captivating short video.
+    
+    Args:
+        input_video_path (str): Path to the input video.
+        output_video_path (str): Path to save the output short video.
+        timestamps (list of tuples): List of start and end times for interesting clips.
+        music_path (str): Path to the background music file.
+    """
+    clips = []
+
+    # Load the input video
+    video = VideoFileClip(input_video_path)
+
+    # Extract clips based on timestamps and crop to 9:16 aspect ratio
+    for start, end in timestamps:
+        clip = video.subclip(start, end)
+        width, height = clip.size
+        new_width = width
+        new_height = int(width * 16 / 9)
+
+        cropped_clip = clip.crop(x1=0, y1=(height - new_height) // 2, x2=width, y2=(height + new_height) // 2)
+        clips.append(cropped_clip)
+
+    # Concatenate the extracted clips
+    final_video = concatenate_videoclips(clips, method="compose")
+
+    # Add background music
+    audio = AudioFileClip(music_path).subclip(0, final_video.duration)
+    final_video = final_video.set_audio(audio)
+
+    # Add text overlays
+    for i, clip in enumerate(clips):
+        text = TextClip(f"Scene {i + 1}", fontsize=50, color='white', bg_color='black')
+        text = text.set_position("center").set_duration(3).set_start(clip.start)
+        final_video = concatenate_videoclips([final_video, text], method="compose")
+
+    # Export the final video
+    final_video.write_videofile(output_video_path, codec="libx264", audio_codec="aac", fps=24)
+    print(f"Short video saved at {output_video_path}")
+
+if name == "main":
+    # Define paths and settings
+    input_video = "input_video.mp4"
+    output_video = "output_video.mp4"
+    music = "upbeat_music.mp3"
+
+    # Define interesting timestamps (start, end in seconds)
+    clip_timestamps = [(1, 5), (10, 15), (20, 24)]
+
+    # Process the video
+    process_video(input_video, output_video, clip_timestamps, music)
